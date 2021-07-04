@@ -26,7 +26,8 @@ class _WeatherAppState extends State<WeatherApp> {
 
 
   void fetchSearch(String input) async {
-    var searchResult = await http.get(Uri.parse(searchApiUrl) + input);
+    var a = Uri.parse(searchApiUrl + input);
+    var searchResult = await http.get(a);
     var result = json.decode(searchResult.body)[0];
 
     setState(() {
@@ -36,7 +37,8 @@ class _WeatherAppState extends State<WeatherApp> {
   }
 
   void fetchLocation() async{
-    var locationResult = await http.get(Uri.parse(locationApiUrl) + woeid.toString());
+    var b = Uri.parse(locationApiUrl + woeid.toString());
+    var locationResult = await http.get(b);
     var result = json.decode(locationResult.body);
     var consolidated_weather = result["consolidated_weather"];
     var data = consolidated_weather[0];
