@@ -1,61 +1,110 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'widgets/weather_tile.dart';
+import 'package:http/http.dart' as http;
+import 'dart:core';
 
-void main() => runApp(
-  MaterialApp(
-    title: "Weather App",
-    debugShowCheckedModeBanner: false,
-    home: MyApp()
-  )
-);
+void main() => runApp(WeatherApp());
 
-class MyApp extends StatefulWidget{
+
+class WeatherApp extends StatefulWidget {
+  const WeatherApp({Key? key}) : super(key: key);
+
   @override
-  State<StatefulWidget> createState(){
-    return _MyApp();
-  }
+  _WeatherAppState createState() => _WeatherAppState();
 }
 
+class _WeatherAppState extends State<WeatherApp> {
 
-class _MyApp extends State<MyApp>{
+  int temparature = 0;
+  String location = 'San Francisco';
+  int woeid = 2487956;
+  String weather = 'clear';
+
+  String searchApiUrl = 'https://www.metaweather.com/api/location/search/?query=';
+  String locationApiUrl = 'https://www.metaweather.com/api/location/';
+
+
+
+  void fetchSearch(String input) async {
+    var searchResult = await http.get(Uri.parse(searchApiUrl) + input);
+    var result = json.decode(searchResult.body)[0];
+
+    setState(() {
+      location = result["title"];
+      woeid = result["woeid"];
+    });
+  }
+
+  void fetchLocation() async{
+    var locationResult = await http.get(Uri.parse(locationApiUrl) + woeid.toString());
+    var result = json.decode(locationResult.body);
+    var consolidated_weather = result["consolidated_weather"];
+    var data = consolidated_weather[0];
+
+    setState(() {
+      temparature = data["the_temp"].round();
+      weather = data["weather_state_name"].replaceAll(' ','').toLowerCase();
+    });
+  }
+
+  void onTextFieldSubmitted(String input) {
+    fetchSearch(input);
+    fetchLocation();
+  }
+
+
+
   @override
-  Widget build (BuildContext context){
-    return Scaffold(
-      body: Column(
-        children: [
-          Container(
-            height: MediaQuery.of(context).size.height/2,
-            width: MediaQuery.of(context).size.width,
-            color: Color(0xfff1f1f1),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text("Location", style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900)),
-                Padding(padding: EdgeInsets.only(top: 10, bottom: 10),
-                child: Text(
-                  "85°", style: TextStyle(
-                    fontSize: 40, fontWeight: FontWeight.w900, color: Colors.purple),),),
-                Text(
-                  "High of 89°, Low of 35°",
-                  style: TextStyle(color: Color(0xff9e9e9e), fontSize: 14, fontWeight: FontWeight.w600),
+  Widget build(BuildContext context) {
+    return MaterialApp(
 
-                )
-              ],
-            ),
+      debugShowCheckedModeBanner: false,
+      home: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('images/$weather.png'),
+            fit: BoxFit.cover,
           ),
-          Expanded(child: Padding(
-            padding: EdgeInsets.all(20),
-            child: ListView(
-              children: [
-                WeatherTile(icon: Icons.thermostat_outlined, title: "Temparature", subtitle: "85°"),
-                WeatherTile(icon: Icons.filter_drama_outlined, title: "Weather", subtitle: "Cloudy"),
-                WeatherTile(icon: Icons.wb_sunny, title: "Humidity", subtitle: "67%"),
-                WeatherTile(icon: Icons.waves, title: "Wind Speed", subtitle: "2MPH"),
+        ),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Column(
+                children: [
+                  Center(
+                    child: Text(temparature.toString() + ' °C',
+                    style: TextStyle(fontSize: 70, color: Colors.white),
+                    ),
+                  ),
+                  Text(location, style: TextStyle(fontSize: 40, color: Colors.white),)
+                ],
+              ),
+              Column(
+                children: [
+                  Container(
+                    width: 300,
+                    child: TextField(
+                      onSubmitted: (String input){
+                        onTextFieldSubmitted(input);
+                      },
+                      style: TextStyle(color: Colors.white, fontSize: 30),
+                      decoration: InputDecoration(
+                        hintText: "Search a location",
+                        hintStyle: TextStyle(fontSize: 20, color: Colors.white70),
+                        prefixIcon: Icon(Icons.search, color: Colors.white)
+                      ),
+                    ),
+                  ),
+                ],
+              ),
 
-              ],
-            ),
-          ))
-        ],
+            ],
+          ),
+        ),
+
       ),
     );
   }
